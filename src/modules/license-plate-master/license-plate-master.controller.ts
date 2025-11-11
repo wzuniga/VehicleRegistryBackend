@@ -27,8 +27,7 @@ export class LicensePlateMasterController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new license plate' })
-  @ApiResponse({ status: 201, description: 'License plate created successfully' })
-  @ApiResponse({ status: 409, description: 'Plate number already exists' })
+  @ApiResponse({ status: 201, description: 'License plate created successfully or already exists' })
   create(@Body() createLicensePlateMasterDto: CreateLicensePlateMasterDto) {
     return this.licensePlateMasterService.create(createLicensePlateMasterDto);
   }

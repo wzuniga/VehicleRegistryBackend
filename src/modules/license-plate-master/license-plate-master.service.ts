@@ -12,17 +12,35 @@ export class LicensePlateMasterService {
     private licensePlateMasterRepository: Repository<LicensePlateMaster>,
   ) {}
 
-  async create(dto: CreateLicensePlateMasterDto): Promise<LicensePlateMaster> {
+  async create(dto: CreateLicensePlateMasterDto): Promise<any> {
+    // Convertir a mayúsculas
+    const plateNumberUpper = dto.plateNumber.toUpperCase();
+    
+    // Validar si existe
     const existing = await this.licensePlateMasterRepository.findOne({ 
-      where: { plateNumber: dto.plateNumber } 
+      where: { plateNumber: plateNumberUpper } 
     });
     
     if (existing) {
-      throw new ConflictException(`Plate number ${dto.plateNumber} already exists`);
+      return {
+        message: 'Plate already exists',
+        exists: true,
+        data: existing,
+      };
     }
 
-    const plate = this.licensePlateMasterRepository.create(dto);
-    return await this.licensePlateMasterRepository.save(plate);
+    // Crear nuevo registro
+    const plate = this.licensePlateMasterRepository.create({
+      ...dto,
+      plateNumber: plateNumberUpper,
+    });
+    const saved = await this.licensePlateMasterRepository.save(plate);
+    
+    return {
+      message: 'Plate created successfully',
+      exists: false,
+      data: saved,
+    };
   }
 
   async findAll(): Promise<LicensePlateMaster[]> {
@@ -44,12 +62,15 @@ export class LicensePlateMasterService {
   }
 
   async findByPlateNumber(plateNumber: string): Promise<LicensePlateMaster> {
+    // Convertir a mayúsculas para buscar
+    const plateNumberUpper = plateNumber.toUpperCase();
+    
     const result = await this.licensePlateMasterRepository.findOne({ 
-      where: { plateNumber } 
+      where: { plateNumber: plateNumberUpper } 
     });
     
     if (!result) {
-      throw new NotFoundException(`Plate number ${plateNumber} not found`);
+      throw new NotFoundException(`Plate number ${plateNumberUpper} not found`);
     }
     
     return result;
@@ -70,12 +91,17 @@ export class LicensePlateMasterService {
   async update(id: number, dto: UpdateLicensePlateMasterDto): Promise<LicensePlateMaster> {
     const plate = await this.findOne(id);
     
-    if (dto.plateNumber && dto.plateNumber !== plate.plateNumber) {
-      const existing = await this.licensePlateMasterRepository.findOne({ 
-        where: { plateNumber: dto.plateNumber } 
-      });
-      if (existing) {
-        throw new ConflictException(`Plate number ${dto.plateNumber} already exists`);
+    // Convertir a mayúsculas si se proporciona plateNumber
+    if (dto.plateNumber) {
+      dto.plateNumber = dto.plateNumber.toUpperCase();
+      
+      if (dto.plateNumber !== plate.plateNumber) {
+        const existing = await this.licensePlateMasterRepository.findOne({ 
+          where: { plateNumber: dto.plateNumber } 
+        });
+        if (existing) {
+          throw new ConflictException(`Plate number ${dto.plateNumber} already exists`);
+        }
       }
     }
     
