@@ -13,4 +13,7 @@ export class PendingCarPlate {
 
   @Column({ name: 'is_loaded', type: 'boolean', default: false, nullable: true })
   isLoaded: boolean;
+
+  @Column({ name: 'search_attempts', type: 'int4', default: 0 })
+  searchAttempts: number;
 }

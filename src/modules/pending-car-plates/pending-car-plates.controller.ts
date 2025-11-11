@@ -107,6 +107,15 @@ export class PendingCarPlatesController {
     return this.pendingCarPlatesService.markAsLoaded(id);
   }
 
+  @Patch(':id/reset-attempts')
+  @ApiOperation({ summary: 'Reset search attempts for a plate' })
+  @ApiParam({ name: 'id', type: 'number', description: 'Plate ID' })
+  @ApiResponse({ status: 200, description: 'Search attempts reset to 0' })
+  @ApiResponse({ status: 404, description: 'Plate not found' })
+  resetSearchAttempts(@Param('id', ParseIntPipe) id: number) {
+    return this.pendingCarPlatesService.resetSearchAttempts(id);
+  }
+
   @Delete(':id')
   // @UseGuards(JwtAuthGuard)
   // @ApiBearerAuth('JWT-auth')

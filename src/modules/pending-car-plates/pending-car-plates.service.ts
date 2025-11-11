@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { PendingCarPlate } from './entities/pending-car-plate.entity';
 import { CreatePendingCarPlateDto } from './dto/create-pending-car-plate.dto';
 import { UpdatePendingCarPlateDto } from './dto/update-pending-car-plate.dto';
@@ -84,21 +84,38 @@ export class PendingCarPlatesService {
 
   async getUnloadedPlates(): Promise<PendingCarPlate[]> {
     return await this.pendingCarPlatesRepository.find({
-      where: { isLoaded: false },
+      where: { 
+        isLoaded: false,
+        searchAttempts: LessThan(3),
+      },
       order: { createdAt: 'DESC' },
     });
   }
 
   async getFirstUnloadedPlate(): Promise<PendingCarPlate> {
+    // Buscar placa no cargada con menos de 3 intentos
     const plate = await this.pendingCarPlatesRepository.findOne({
-      where: { isLoaded: false },
+      where: { 
+        isLoaded: false,
+        searchAttempts: LessThan(3),
+      },
       order: { createdAt: 'ASC' },
     });
     
     if (!plate) {
-      throw new NotFoundException('No unloaded plates found');
+      throw new NotFoundException('No unloaded plates found with less than 3 attempts');
     }
     
+    // Incrementar searchAttempts
+    plate.searchAttempts += 1;
+    await this.pendingCarPlatesRepository.save(plate);
+    
     return plate;
+  }
+
+  async resetSearchAttempts(id: number): Promise<PendingCarPlate> {
+    const plate = await this.findOne(id);
+    plate.searchAttempts = 0;
+    return await this.pendingCarPlatesRepository.save(plate);
   }
 }
