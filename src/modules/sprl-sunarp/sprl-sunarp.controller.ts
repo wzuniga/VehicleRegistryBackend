@@ -63,6 +63,23 @@ export class SprlSunarpController {
     return this.sprlSunarpService.findByCreatedBy(createdBy);
   }
 
+  @Get('plate/:plateNumber')
+  @ApiOperation({ summary: 'Get records by plate number' })
+  @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
+  @ApiResponse({ status: 200, description: 'List of records with specified plate number' })
+  findByPlateNumber(@Param('plateNumber') plateNumber: string) {
+    return this.sprlSunarpService.findByPlateNumber(plateNumber);
+  }
+
+  @Get('plate/:plateNumber/max-version')
+  @ApiOperation({ summary: 'Get maximum version for a plate number' })
+  @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
+  @ApiResponse({ status: 200, description: 'Maximum version number (0 if plate not found)' })
+  async getMaxVersionByPlate(@Param('plateNumber') plateNumber: string) {
+    const version = await this.sprlSunarpService.getMaxVersionByPlate(plateNumber);
+    return { plateNumber, maxVersion: version };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a SPRL SUNARP record by ID' })
   @ApiParam({ name: 'id', type: 'number', description: 'Record ID' })

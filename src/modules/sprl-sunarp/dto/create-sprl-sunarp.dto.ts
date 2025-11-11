@@ -77,4 +77,14 @@ export class CreateSprlSunarpDto {
   @IsNotEmpty()
   @IsInt()
   createdBy: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Plate number',
+    example: 'ABC-1234',
+    maxLength: 20,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  plateNumber?: string;
 }

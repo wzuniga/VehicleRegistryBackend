@@ -37,4 +37,7 @@ export class SprlSunarp {
 
   @Column({ name: 'created_by', type: 'int4' })
   createdBy: number;
+
+  @Column({ name: 'plate_number', type: 'varchar', length: 20, nullable: true })
+  plateNumber: string;
 }

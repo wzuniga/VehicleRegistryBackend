@@ -56,6 +56,22 @@ export class SprlSunarpService {
     });
   }
 
+  async findByPlateNumber(plateNumber: string): Promise<SprlSunarp[]> {
+    return await this.sprlSunarpRepository.find({
+      where: { plateNumber },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getMaxVersionByPlate(plateNumber: string): Promise<number> {
+    const record = await this.sprlSunarpRepository.findOne({
+      where: { plateNumber },
+      order: { version: 'DESC', createdAt: 'DESC' },
+    });
+    
+    return record ? record.version : 0;
+  }
+
   async update(id: number, dto: UpdateSprlSunarpDto): Promise<SprlSunarp> {
     const record = await this.findOne(id);
     Object.assign(record, dto);
