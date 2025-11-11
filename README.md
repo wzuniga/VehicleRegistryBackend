@@ -141,3 +141,31 @@ npm run migration:revert
 ## Licencia
 
 MIT
+
+
+
+📝 Comandos Útiles
+
+# Actualizar código
+```bash
+cd VehicleRegistryBackend
+git pull
+npm install
+npm run build
+pm2 restart vehicle-registry-api
+```
+
+# Ver logs
+```bash
+pm2 logs vehicle-registry-api
+```
+
+# Monitorear
+```bash
+pm2 monit
+```
+
+🔒 Opcional: Configurar Nginx + HTTPS
+Si quieres usar un dominio y HTTPS, sigue la sección de Nginx en DEPLOYMENT.md.
+
+¿Quieres que te ayude con algún paso específico del despliegue?

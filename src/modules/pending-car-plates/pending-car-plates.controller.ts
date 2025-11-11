@@ -53,6 +53,14 @@ export class PendingCarPlatesController {
     return this.pendingCarPlatesService.getUnloadedPlates();
   }
 
+  @Get('unloaded/first')
+  @ApiOperation({ summary: 'Get the first unloaded car plate' })
+  @ApiResponse({ status: 200, description: 'First unloaded car plate found' })
+  @ApiResponse({ status: 404, description: 'No unloaded plates found' })
+  getFirstUnloaded() {
+    return this.pendingCarPlatesService.getFirstUnloadedPlate();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a pending car plate by ID' })
   @ApiParam({ name: 'id', type: 'number', description: 'Plate ID' })

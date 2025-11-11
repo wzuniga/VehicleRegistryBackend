@@ -88,4 +88,17 @@ export class PendingCarPlatesService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async getFirstUnloadedPlate(): Promise<PendingCarPlate> {
+    const plate = await this.pendingCarPlatesRepository.findOne({
+      where: { isLoaded: false },
+      order: { createdAt: 'ASC' },
+    });
+    
+    if (!plate) {
+      throw new NotFoundException('No unloaded plates found');
+    }
+    
+    return plate;
+  }
 }
