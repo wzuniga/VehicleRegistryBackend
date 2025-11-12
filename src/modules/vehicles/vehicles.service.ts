@@ -12,11 +12,18 @@ export class VehiclesService {
     private vehiclesRepository: Repository<Vehicle>,
   ) {}
 
-  async findAll() {
-    return await this.vehiclesRepository.find();
+  async create(dto: CreateVehicleDto): Promise<Vehicle> {
+    const vehicle = this.vehiclesRepository.create(dto);
+    return await this.vehiclesRepository.save(vehicle);
   }
 
-  async findOne(id: string) {
+  async findAll(): Promise<Vehicle[]> {
+    return await this.vehiclesRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOne(id: number): Promise<Vehicle> {
     const vehicle = await this.vehiclesRepository.findOne({ where: { id } });
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);
@@ -24,23 +31,32 @@ export class VehiclesService {
     return vehicle;
   }
 
-  async create(dto: CreateVehicleDto, user: any) {
-    const vehicle = this.vehiclesRepository.create({
-      ...dto,
-      createdBy: user.userId,
+  async findByPlateNumber(plateNumber: string): Promise<Vehicle> {
+    const vehicle = await this.vehiclesRepository.findOne({ 
+      where: { plateNumber } 
     });
-    return await this.vehiclesRepository.save(vehicle);
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with plate number ${plateNumber} not found`);
+    }
+    return vehicle;
   }
 
-  async update(id: string, dto: UpdateVehicleDto) {
+  async findByCurrentPlate(currentPlate: string): Promise<Vehicle[]> {
+    return await this.vehiclesRepository.find({
+      where: { currentPlate },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async update(id: number, dto: UpdateVehicleDto): Promise<Vehicle> {
     const vehicle = await this.findOne(id);
     Object.assign(vehicle, dto);
     return await this.vehiclesRepository.save(vehicle);
   }
 
-  async remove(id: string) {
+  async remove(id: number): Promise<void> {
     const vehicle = await this.findOne(id);
     await this.vehiclesRepository.remove(vehicle);
-    return { message: 'Vehicle deleted successfully' };
   }
 }
+

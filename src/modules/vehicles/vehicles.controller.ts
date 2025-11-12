@@ -1,14 +1,36 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Body, 
+  Param, 
+  Patch, 
+  Delete, 
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiParam,
+} from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-// import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @ApiTags('Vehicles')
 @Controller('vehicles')
 export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new vehicle' })
+  @ApiResponse({ status: 201, description: 'Vehicle created successfully' })
+  create(@Body() createVehicleDto: CreateVehicleDto) {
+    return this.vehiclesService.create(createVehicleDto);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all vehicles' })
@@ -19,44 +41,50 @@ export class VehiclesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a vehicle by ID' })
-  @ApiParam({ name: 'id', description: 'Vehicle ID' })
+  @ApiParam({ name: 'id', type: 'number', description: 'Vehicle ID' })
   @ApiResponse({ status: 200, description: 'Vehicle found' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.findOne(id);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth('JWT-auth')
-  @Post()
-  @ApiOperation({ summary: 'Create a new vehicle' })
-  @ApiResponse({ status: 201, description: 'Vehicle created successfully' })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  create(@Body() dto: CreateVehicleDto, @Request() req) {
-    return this.vehiclesService.create(dto, req.user);
+  @Get('plate/:plateNumber')
+  @ApiOperation({ summary: 'Get a vehicle by plate number' })
+  @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
+  @ApiResponse({ status: 200, description: 'Vehicle found' })
+  @ApiResponse({ status: 404, description: 'Vehicle not found' })
+  findByPlateNumber(@Param('plateNumber') plateNumber: string) {
+    return this.vehiclesService.findByPlateNumber(plateNumber);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth('JWT-auth')
-  @Put(':id')
+  @Get('current-plate/:currentPlate')
+  @ApiOperation({ summary: 'Get vehicles by current plate' })
+  @ApiParam({ name: 'currentPlate', type: 'string', description: 'Current plate number' })
+  @ApiResponse({ status: 200, description: 'List of vehicles with specified current plate' })
+  findByCurrentPlate(@Param('currentPlate') currentPlate: string) {
+    return this.vehiclesService.findByCurrentPlate(currentPlate);
+  }
+
+  @Patch(':id')
   @ApiOperation({ summary: 'Update a vehicle' })
-  @ApiParam({ name: 'id', description: 'Vehicle ID' })
+  @ApiParam({ name: 'id', type: 'number', description: 'Vehicle ID' })
   @ApiResponse({ status: 200, description: 'Vehicle updated successfully' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
-    return this.vehiclesService.update(id, dto);
+  update(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() updateVehicleDto: UpdateVehicleDto,
+  ) {
+    return this.vehiclesService.update(id, updateVehicleDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth('JWT-auth')
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a vehicle' })
-  @ApiParam({ name: 'id', description: 'Vehicle ID' })
-  @ApiResponse({ status: 200, description: 'Vehicle deleted successfully' })
+  @ApiParam({ name: 'id', type: 'number', description: 'Vehicle ID' })
+  @ApiResponse({ status: 204, description: 'Vehicle deleted successfully' })
   @ApiResponse({ status: 404, description: 'Vehicle not found' })
-  // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.remove(id);
   }
 }
+
