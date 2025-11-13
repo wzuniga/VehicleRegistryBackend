@@ -46,19 +46,23 @@ export class PendingCarPlatesController {
     return this.pendingCarPlatesService.findAll();
   }
 
-  @Get('unloaded')
-  @ApiOperation({ summary: 'Get all unloaded car plates' })
+  @Get('unloaded/:letter')
+  @ApiOperation({ summary: 'Get all unloaded car plates by letter' })
+  @ApiParam({ name: 'letter', type: 'string', description: 'Letter (a-m)', example: 'a' })
   @ApiResponse({ status: 200, description: 'List of unloaded car plates' })
-  getUnloaded() {
-    return this.pendingCarPlatesService.getUnloadedPlates();
+  @ApiResponse({ status: 400, description: 'Invalid letter' })
+  getUnloaded(@Param('letter') letter: string) {
+    return this.pendingCarPlatesService.getUnloadedPlates(letter);
   }
 
-  @Get('unloaded/first')
-  @ApiOperation({ summary: 'Get the first unloaded car plate' })
+  @Get('unloaded/:letter/first')
+  @ApiOperation({ summary: 'Get the first unloaded car plate by letter' })
+  @ApiParam({ name: 'letter', type: 'string', description: 'Letter (a-m)', example: 'a' })
   @ApiResponse({ status: 200, description: 'First unloaded car plate found' })
   @ApiResponse({ status: 404, description: 'No unloaded plates found' })
-  getFirstUnloaded() {
-    return this.pendingCarPlatesService.getFirstUnloadedPlate();
+  @ApiResponse({ status: 400, description: 'Invalid letter' })
+  getFirstUnloaded(@Param('letter') letter: string) {
+    return this.pendingCarPlatesService.getFirstUnloadedPlate(letter);
   }
 
   @Get(':id')
@@ -95,25 +99,35 @@ export class PendingCarPlatesController {
     return this.pendingCarPlatesService.update(id, updatePendingCarPlateDto);
   }
 
-  @Patch(':id/mark-loaded')
+  @Patch(':id/mark-loaded/:letter')
   // @UseGuards(JwtAuthGuard)
   // @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Mark a plate as loaded' })
+  @ApiOperation({ summary: 'Mark a plate as loaded for specific letter' })
   @ApiParam({ name: 'id', type: 'number', description: 'Plate ID' })
+  @ApiParam({ name: 'letter', type: 'string', description: 'Letter (a-m)', example: 'a' })
   @ApiResponse({ status: 200, description: 'Plate marked as loaded' })
   @ApiResponse({ status: 404, description: 'Plate not found' })
+  @ApiResponse({ status: 400, description: 'Invalid letter' })
   // @ApiResponse({ status: 401, description: 'Unauthorized' })
-  markAsLoaded(@Param('id', ParseIntPipe) id: number) {
-    return this.pendingCarPlatesService.markAsLoaded(id);
+  markAsLoaded(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('letter') letter: string,
+  ) {
+    return this.pendingCarPlatesService.markAsLoaded(id, letter);
   }
 
-  @Patch(':id/reset-attempts')
-  @ApiOperation({ summary: 'Reset search attempts for a plate' })
+  @Patch(':id/reset-attempts/:letter')
+  @ApiOperation({ summary: 'Reset search attempts for a plate by letter' })
   @ApiParam({ name: 'id', type: 'number', description: 'Plate ID' })
+  @ApiParam({ name: 'letter', type: 'string', description: 'Letter (a-m)', example: 'a' })
   @ApiResponse({ status: 200, description: 'Search attempts reset to 0' })
   @ApiResponse({ status: 404, description: 'Plate not found' })
-  resetSearchAttempts(@Param('id', ParseIntPipe) id: number) {
-    return this.pendingCarPlatesService.resetSearchAttempts(id);
+  @ApiResponse({ status: 400, description: 'Invalid letter' })
+  resetSearchAttempts(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('letter') letter: string,
+  ) {
+    return this.pendingCarPlatesService.resetSearchAttempts(id, letter);
   }
 
   @Delete(':id')
