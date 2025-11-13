@@ -97,8 +97,8 @@ export class PendingCarPlatesService {
 
   async getUnloadedPlates(letter: string): Promise<PendingCarPlate[]> {
     const validLetter = this.validateLetter(letter);
-    const isLoadedField = `${validLetter}_is_loaded`;
-    const searchAttemptsField = `${validLetter}_search_attempts`;
+    const isLoadedField = `${validLetter}IsLoaded` as keyof PendingCarPlate;
+    const searchAttemptsField = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
     
     return await this.pendingCarPlatesRepository.find({
       where: { 
@@ -111,8 +111,8 @@ export class PendingCarPlatesService {
 
   async getFirstUnloadedPlate(letter: string): Promise<PendingCarPlate> {
     const validLetter = this.validateLetter(letter);
-    const isLoadedField = `${validLetter}_is_loaded`;
-    const searchAttemptsField = `${validLetter}_search_attempts`;
+    const isLoadedField = `${validLetter}IsLoaded` as keyof PendingCarPlate;
+    const searchAttemptsField = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
     
     // Buscar placa no cargada con menos de 3 intentos
     const plate = await this.pendingCarPlatesRepository.findOne({
@@ -128,8 +128,7 @@ export class PendingCarPlatesService {
     }
     
     // Incrementar searchAttempts
-    const camelCaseAttempts = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
-    (plate as any)[camelCaseAttempts] += 1;
+    (plate as any)[searchAttemptsField] += 1;
     await this.pendingCarPlatesRepository.save(plate);
     
     return plate;
