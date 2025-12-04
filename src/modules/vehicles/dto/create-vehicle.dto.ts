@@ -13,6 +13,14 @@ export class CreateVehicleDto {
   plateNumber: string;
 
   @ApiPropertyOptional({ 
+    description: 'Base64 encoded image',
+    example: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...',
+  })
+  @IsOptional()
+  @IsString()
+  imageBase64?: string;
+
+  @ApiPropertyOptional({ 
     description: 'Serial number',
     example: 'SN123456789',
     maxLength: 50,
