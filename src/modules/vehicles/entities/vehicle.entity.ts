@@ -53,7 +53,7 @@ export class Vehicle {
   @Column({ name: 'plate_number', type: 'varchar', length: 20 })
   plateNumber: string;
 
-  @Column({ name: 'image_base64', type: 'text', nullable: true })
+  @Column({ name: 'imagebase64', type: 'text', nullable: true })
   imageBase64: string;
 }
 
