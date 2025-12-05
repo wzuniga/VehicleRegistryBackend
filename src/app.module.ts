@@ -7,6 +7,7 @@ import { PendingCarPlatesModule } from './modules/pending-car-plates/pending-car
 import { LicensePlateMasterModule } from './modules/license-plate-master/license-plate-master.module';
 import { SprlSunarpModule } from './modules/sprl-sunarp/sprl-sunarp.module';
 import { SbsInsuranceModule } from './modules/sbs-insurance/sbs-insurance.module';
+import { InspeccionVehicularModule } from './modules/inspeccion-vehicular/inspeccion-vehicular.module';
 import { typeOrmConfig } from './config/ormconfig';
 
 @Module({
@@ -22,6 +23,7 @@ import { typeOrmConfig } from './config/ormconfig';
     LicensePlateMasterModule,
     SprlSunarpModule,
     SbsInsuranceModule,
+    InspeccionVehicularModule,
   ],
 })
 export class AppModule {}
