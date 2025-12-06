@@ -49,9 +49,10 @@ export class InspeccionVehicularController {
   }
 
   @Get('plate/:plateNumber')
-  @ApiOperation({ summary: 'Get inspecciones vehiculares by plate number' })
+  @ApiOperation({ summary: 'Get most recent inspeccion vehicular by plate number' })
   @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
-  @ApiResponse({ status: 200, description: 'List of inspecciones vehiculares with specified plate number' })
+  @ApiResponse({ status: 200, description: 'Most recent inspeccion vehicular for the plate' })
+  @ApiResponse({ status: 404, description: 'Inspeccion vehicular not found' })
   findByPlateNumber(@Param('plateNumber') plateNumber: string) {
     return this.inspeccionVehicularService.findByPlateNumber(plateNumber);
   }

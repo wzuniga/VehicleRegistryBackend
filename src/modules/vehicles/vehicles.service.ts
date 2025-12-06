@@ -33,7 +33,8 @@ export class VehiclesService {
 
   async findByPlateNumber(plateNumber: string): Promise<Vehicle> {
     const vehicle = await this.vehiclesRepository.findOne({ 
-      where: { plateNumber } 
+      where: { plateNumber },
+      order: { createdAt: 'DESC' },
     });
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with plate number ${plateNumber} not found`);

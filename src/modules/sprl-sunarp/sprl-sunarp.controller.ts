@@ -64,9 +64,10 @@ export class SprlSunarpController {
   }
 
   @Get('plate/:plateNumber')
-  @ApiOperation({ summary: 'Get records by plate number' })
+  @ApiOperation({ summary: 'Get records by plate number (latest version only)' })
   @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
-  @ApiResponse({ status: 200, description: 'List of records with specified plate number' })
+  @ApiResponse({ status: 200, description: 'List of records with specified plate number and latest version' })
+  @ApiResponse({ status: 404, description: 'Records not found' })
   findByPlateNumber(@Param('plateNumber') plateNumber: string) {
     return this.sprlSunarpService.findByPlateNumber(plateNumber);
   }

@@ -31,11 +31,15 @@ export class InspeccionVehicularService {
     return inspeccion;
   }
 
-  async findByPlateNumber(plateNumber: string): Promise<InspeccionVehicular[]> {
-    return await this.inspeccionVehicularRepository.find({
+  async findByPlateNumber(plateNumber: string): Promise<InspeccionVehicular> {
+    const inspeccion = await this.inspeccionVehicularRepository.findOne({
       where: { plateNumber },
       order: { createdAt: 'DESC' },
     });
+    if (!inspeccion) {
+      throw new NotFoundException(`Inspeccion vehicular with plate number ${plateNumber} not found`);
+    }
+    return inspeccion;
   }
 
   async update(id: number, dto: UpdateInspeccionVehicularDto): Promise<InspeccionVehicular> {

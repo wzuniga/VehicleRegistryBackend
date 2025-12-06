@@ -57,8 +57,22 @@ export class SprlSunarpService {
   }
 
   async findByPlateNumber(plateNumber: string): Promise<SprlSunarp[]> {
-    return await this.sprlSunarpRepository.find({
+    // First, find the maximum version for this plate
+    const maxVersionRecord = await this.sprlSunarpRepository.findOne({
       where: { plateNumber },
+      order: { version: 'DESC', createdAt: 'DESC' },
+    });
+
+    if (!maxVersionRecord) {
+      throw new NotFoundException(`SPRL SUNARP records with plate number ${plateNumber} not found`);
+    }
+
+    // Then, return all records with that maximum version
+    return await this.sprlSunarpRepository.find({
+      where: { 
+        plateNumber,
+        version: maxVersionRecord.version,
+      },
       order: { createdAt: 'DESC' },
     });
   }

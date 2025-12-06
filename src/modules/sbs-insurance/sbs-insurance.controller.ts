@@ -49,9 +49,10 @@ export class SbsInsuranceController {
   }
 
   @Get('plate/:plateNumber')
-  @ApiOperation({ summary: 'Get SBS insurance records by plate number' })
+  @ApiOperation({ summary: 'Get most recent SBS insurance record by plate number' })
   @ApiParam({ name: 'plateNumber', type: 'string', description: 'Plate number' })
-  @ApiResponse({ status: 200, description: 'List of insurance records for the plate' })
+  @ApiResponse({ status: 200, description: 'Most recent insurance record for the plate' })
+  @ApiResponse({ status: 404, description: 'Insurance record not found' })
   findByPlateNumber(@Param('plateNumber') plateNumber: string) {
     return this.sbsInsuranceService.findByPlateNumber(plateNumber);
   }

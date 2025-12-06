@@ -31,11 +31,15 @@ export class SbsInsuranceService {
     return insurance;
   }
 
-  async findByPlateNumber(plateNumber: string): Promise<SbsInsurance[]> {
-    return await this.sbsInsuranceRepository.find({
+  async findByPlateNumber(plateNumber: string): Promise<SbsInsurance> {
+    const insurance = await this.sbsInsuranceRepository.findOne({
       where: { plateNumber },
       order: { createdAt: 'DESC' },
     });
+    if (!insurance) {
+      throw new NotFoundException(`SBS Insurance record with plate number ${plateNumber} not found`);
+    }
+    return insurance;
   }
 
   async update(id: number, dto: UpdateSbsInsuranceDto): Promise<SbsInsurance> {
