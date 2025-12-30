@@ -1,20 +1,20 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   // UseGuards,
   HttpCode,
   HttpStatus,
   ParseIntPipe,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
   // ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
@@ -26,7 +26,7 @@ import { UpdatePendingCarPlateDto } from './dto/update-pending-car-plate.dto';
 @ApiTags('Pending Car Plates')
 @Controller('pending-car-plates')
 export class PendingCarPlatesController {
-  constructor(private readonly pendingCarPlatesService: PendingCarPlatesService) {}
+  constructor(private readonly pendingCarPlatesService: PendingCarPlatesService) { }
 
   @Post()
   // @UseGuards(JwtAuthGuard)
@@ -93,7 +93,7 @@ export class PendingCarPlatesController {
   @ApiResponse({ status: 409, description: 'Plate already exists' })
   // @ApiResponse({ status: 401, description: 'Unauthorized' })
   update(
-    @Param('id', ParseIntPipe) id: number, 
+    @Param('id', ParseIntPipe) id: number,
     @Body() updatePendingCarPlateDto: UpdatePendingCarPlateDto,
   ) {
     return this.pendingCarPlatesService.update(id, updatePendingCarPlateDto);
@@ -128,6 +128,15 @@ export class PendingCarPlatesController {
     @Param('letter') letter: string,
   ) {
     return this.pendingCarPlatesService.resetSearchAttempts(id, letter);
+  }
+
+  @Patch('plate/:plate/reset-all')
+  @ApiOperation({ summary: 'Reset all letters (a-m) for a specific plate' })
+  @ApiParam({ name: 'plate', type: 'string', description: 'Plate number', example: 'ABC123' })
+  @ApiResponse({ status: 200, description: 'All letters reset successfully (is_loaded=false, search_attempts=0)' })
+  @ApiResponse({ status: 404, description: 'Plate not found' })
+  resetAllLettersByPlate(@Param('plate') plate: string) {
+    return this.pendingCarPlatesService.resetAllLettersByPlate(plate);
   }
 
   @Delete(':id')
