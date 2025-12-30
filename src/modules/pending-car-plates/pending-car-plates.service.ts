@@ -12,13 +12,13 @@ export class PendingCarPlatesService {
   constructor(
     @InjectRepository(PendingCarPlate)
     private pendingCarPlatesRepository: Repository<PendingCarPlate>,
-  ) {}
+  ) { }
 
   async create(dto: CreatePendingCarPlateDto): Promise<PendingCarPlate> {
-    const existing = await this.pendingCarPlatesRepository.findOne({ 
-      where: { plate: dto.plate } 
+    const existing = await this.pendingCarPlatesRepository.findOne({
+      where: { plate: dto.plate }
     });
-    
+
     if (existing) {
       throw new ConflictException(`Plate ${dto.plate} already exists`);
     }
@@ -34,41 +34,41 @@ export class PendingCarPlatesService {
   }
 
   async findOne(id: number): Promise<PendingCarPlate> {
-    const plate = await this.pendingCarPlatesRepository.findOne({ 
-      where: { id } 
+    const plate = await this.pendingCarPlatesRepository.findOne({
+      where: { id }
     });
-    
+
     if (!plate) {
       throw new NotFoundException(`Pending car plate with ID ${id} not found`);
     }
-    
+
     return plate;
   }
 
   async findByPlate(plate: string): Promise<PendingCarPlate> {
-    const result = await this.pendingCarPlatesRepository.findOne({ 
-      where: { plate } 
+    const result = await this.pendingCarPlatesRepository.findOne({
+      where: { plate }
     });
-    
+
     if (!result) {
       throw new NotFoundException(`Plate ${plate} not found`);
     }
-    
+
     return result;
   }
 
   async update(id: number, dto: UpdatePendingCarPlateDto): Promise<PendingCarPlate> {
     const plate = await this.findOne(id);
-    
+
     if (dto.plate && dto.plate !== plate.plate) {
-      const existing = await this.pendingCarPlatesRepository.findOne({ 
-        where: { plate: dto.plate } 
+      const existing = await this.pendingCarPlatesRepository.findOne({
+        where: { plate: dto.plate }
       });
       if (existing) {
         throw new ConflictException(`Plate ${dto.plate} already exists`);
       }
     }
-    
+
     Object.assign(plate, dto);
     return await this.pendingCarPlatesRepository.save(plate);
   }
@@ -99,9 +99,9 @@ export class PendingCarPlatesService {
     const validLetter = this.validateLetter(letter);
     const isLoadedField = `${validLetter}IsLoaded` as keyof PendingCarPlate;
     const searchAttemptsField = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
-    
+
     return await this.pendingCarPlatesRepository.find({
-      where: { 
+      where: {
         [isLoadedField]: false,
         [searchAttemptsField]: LessThan(3),
       },
@@ -113,24 +113,24 @@ export class PendingCarPlatesService {
     const validLetter = this.validateLetter(letter);
     const isLoadedField = `${validLetter}IsLoaded` as keyof PendingCarPlate;
     const searchAttemptsField = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
-    
+
     // Buscar placa no cargada con menos de 3 intentos
     const plate = await this.pendingCarPlatesRepository.findOne({
-      where: { 
+      where: {
         [isLoadedField]: false,
         [searchAttemptsField]: LessThan(3),
       },
       order: { createdAt: 'ASC' },
     });
-    
+
     if (!plate) {
       throw new NotFoundException(`No unloaded plates found for letter '${validLetter}' with less than 3 attempts`);
     }
-    
+
     // Incrementar searchAttempts
     (plate as any)[searchAttemptsField] += 1;
     await this.pendingCarPlatesRepository.save(plate);
-    
+
     return plate;
   }
 
@@ -139,6 +139,21 @@ export class PendingCarPlatesService {
     const plate = await this.findOne(id);
     const searchAttemptsField = `${validLetter}SearchAttempts` as keyof PendingCarPlate;
     (plate as any)[searchAttemptsField] = 0;
+    return await this.pendingCarPlatesRepository.save(plate);
+  }
+
+  async resetAllLettersByPlate(plateNumber: string): Promise<PendingCarPlate> {
+    const plate = await this.findByPlate(plateNumber);
+    const validLetters: ValidLetter[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'];
+
+    // Reset all is_loaded fields to false and all search_attempts to 0
+    validLetters.forEach(letter => {
+      const isLoadedField = `${letter}IsLoaded` as keyof PendingCarPlate;
+      const searchAttemptsField = `${letter}SearchAttempts` as keyof PendingCarPlate;
+      (plate as any)[isLoadedField] = false;
+      (plate as any)[searchAttemptsField] = 0;
+    });
+
     return await this.pendingCarPlatesRepository.save(plate);
   }
 }
