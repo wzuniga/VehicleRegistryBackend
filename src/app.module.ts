@@ -8,6 +8,7 @@ import { LicensePlateMasterModule } from './modules/license-plate-master/license
 import { SprlSunarpModule } from './modules/sprl-sunarp/sprl-sunarp.module';
 import { SbsInsuranceModule } from './modules/sbs-insurance/sbs-insurance.module';
 import { InspeccionVehicularModule } from './modules/inspeccion-vehicular/inspeccion-vehicular.module';
+import { SoatApesegModule } from './modules/soat-apeseg/soat-apeseg.module';
 import { typeOrmConfig } from './config/ormconfig';
 
 @Module({
@@ -24,6 +25,7 @@ import { typeOrmConfig } from './config/ormconfig';
     SprlSunarpModule,
     SbsInsuranceModule,
     InspeccionVehicularModule,
+    SoatApesegModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
