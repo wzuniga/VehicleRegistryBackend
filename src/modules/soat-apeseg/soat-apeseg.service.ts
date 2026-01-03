@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { SoatApeseg } from './entities/soat-apeseg.entity';
 import { CreateSoatApesegDto } from './dto/create-soat-apeseg.dto';
 import { UpdateSoatApesegDto } from './dto/update-soat-apeseg.dto';
@@ -50,9 +50,9 @@ export class SoatApesegService {
     }
 
     async findByPlate(plate: string): Promise<SoatApeseg[]> {
-        // First, find the maximum version for this plate
+        // First, find the maximum version for this plate (case-insensitive)
         const maxVersionRecord = await this.soatApesegRepository.findOne({
-            where: { plate },
+            where: { plate: ILike(plate) },
             order: { version: 'DESC', createdAt: 'DESC' },
         });
 
@@ -60,10 +60,10 @@ export class SoatApesegService {
             throw new NotFoundException(`SOAT APESEG records with plate ${plate} not found`);
         }
 
-        // Then, return all records with that maximum version
+        // Then, return all records with that maximum version (case-insensitive)
         return await this.soatApesegRepository.find({
             where: {
-                plate,
+                plate: ILike(plate),
                 version: maxVersionRecord.version,
             },
             order: { createdAt: 'DESC' },
@@ -72,7 +72,7 @@ export class SoatApesegService {
 
     async getMaxVersionByPlate(plate: string): Promise<number> {
         const record = await this.soatApesegRepository.findOne({
-            where: { plate },
+            where: { plate: ILike(plate) },
             order: { version: 'DESC', createdAt: 'DESC' },
         });
 
