@@ -15,6 +15,9 @@ export const typeOrmConfig: DataSourceOptions = {
   synchronize: false, // Desactivado - no hacer ALTER a la base de datos
   logging: process.env.NODE_ENV === 'development',
   subscribers: [],
+  ssl: {
+    rejectUnauthorized: false,
+  },
 };
 
 const dataSource = new DataSource(typeOrmConfig);
