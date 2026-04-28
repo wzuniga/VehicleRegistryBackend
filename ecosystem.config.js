@@ -3,11 +3,11 @@ module.exports = {
     {
       name: 'vehicle-registry-api',
       script: 'dist/main.js',
-      instances: 'max',
-      exec_mode: 'cluster',
+      instances: 3,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '350M',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,

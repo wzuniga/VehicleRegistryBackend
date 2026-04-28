@@ -75,12 +75,111 @@ npm run start:dev
 
 El servidor estará disponible en `http://localhost:3000`
 
-### Producción
+### Producción (rápida)
 
 ```bash
 npm run build
 npm run start:prod
 ```
+
+## Despliegue a Producción (clásico y eficiente)
+
+La opción más usada y estable para un VPS es:
+
+- NestJS compilado (`dist/`)
+- PM2 como process manager
+- Nginx como reverse proxy (opcional pero recomendado)
+
+Este proyecto ya incluye configuración lista para ese enfoque en `ecosystem.config.js` y un script de despliegue en `deployBackend.sh`.
+
+### 1. Preparar servidor
+
+Recomendado: Ubuntu 22.04+, Node.js 20 LTS y PM2.
+
+```bash
+sudo apt update
+sudo apt install -y git nginx
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g pm2
+```
+
+### 2. Configurar proyecto en servidor
+
+```bash
+git clone <tu-repo>
+cd VehicleRegistryBackend
+cp .env.production .env
+```
+
+Edita `.env` con credenciales reales y seguras. Nunca subas secretos al repositorio.
+
+### 3. Primer deploy
+
+```bash
+chmod +x deployBackend.sh
+./deployBackend.sh
+```
+
+El script hace:
+
+- `git pull`
+- instalación de dependencias con `npm install`
+- compilación `npm run build`
+- si la API no existe en PM2: `pm2 start ecosystem.config.js --only vehicle-registry-api --env production`
+- si ya existe: `pm2 restart vehicle-registry-api --update-env`
+
+### 4. Autoarranque tras reinicio del servidor
+
+```bash
+pm2 startup
+pm2 save
+```
+
+Ejecuta el comando que te devuelva `pm2 startup`.
+
+### 5. Nginx (recomendado)
+
+Configura un proxy hacia la API en puerto interno 3000.
+
+```nginx
+server {
+	listen 80;
+	server_name api.tu-dominio.com;
+
+	location / {
+		proxy_pass http://127.0.0.1:3000;
+		proxy_http_version 1.1;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+}
+```
+
+### 6. Operación diaria
+
+```bash
+# Actualizar backend
+./deployBackend.sh
+
+# Logs
+pm2 logs vehicle-registry-api
+
+# Estado y consumo
+pm2 status
+pm2 monit
+```
+
+### Perfil recomendado para bajo consumo
+
+- PM2 en `fork` con 1 instancia por defecto
+- reinicio automático por memoria (`max_memory_restart`)
+- `watch: false` en producción
+- app detrás de Nginx
+
+Si luego necesitas más throughput, puedes pasar a `cluster` con más instancias.
 
 ## Endpoints Principales
 
@@ -141,31 +240,3 @@ npm run migration:revert
 ## Licencia
 
 MIT
-
-
-
-📝 Comandos Útiles
-
-# Actualizar código
-```bash
-cd VehicleRegistryBackend
-git pull
-npm install
-npm run build
-pm2 restart vehicle-registry-api
-```
-
-# Ver logs
-```bash
-pm2 logs vehicle-registry-api
-```
-
-# Monitorear
-```bash
-pm2 monit
-```
-
-🔒 Opcional: Configurar Nginx + HTTPS
-Si quieres usar un dominio y HTTPS, sigue la sección de Nginx en DEPLOYMENT.md.
-
-¿Quieres que te ayude con algún paso específico del despliegue?

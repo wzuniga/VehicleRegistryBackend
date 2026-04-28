@@ -1,23 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Script de despliegue para VehicleRegistryBackend
-
-# Salir si ocurre un error
+# Script de despliegue simple para VehicleRegistryBackend
 set -e
 
 echo "📂 Entrando al directorio del proyecto..."
 cd VehicleRegistryBackend
 
-echo "⬇️ Actualizando repositorio..."
+echo "Actualizando repositorio..."
 git pull
 
-echo "📦 Instalando dependencias..."
+echo "Instalando dependencias..."
 npm install
 
-echo "🔨 Construyendo proyecto..."
+echo "Construyendo proyecto..."
 npm run build
 
 echo "🔁 Reiniciando servicio con PM2..."
 pm2 restart vehicle-registry-api
 
-echo "✅ Despliegue completado con éxito."
+echo "Despliegue completado con exito."
