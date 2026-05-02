@@ -139,6 +139,15 @@ export class PendingCarPlatesController {
     return this.pendingCarPlatesService.resetAllLettersByPlate(plate);
   }
 
+  @Patch('plate/:plate/touch-created-at')
+  @ApiOperation({ summary: 'Update createdAt to current date for a specific plate' })
+  @ApiParam({ name: 'plate', type: 'string', description: 'Plate number', example: 'ABC123' })
+  @ApiResponse({ status: 200, description: 'createdAt updated to current date/time' })
+  @ApiResponse({ status: 404, description: 'Plate not found' })
+  touchCreatedAtByPlate(@Param('plate') plate: string) {
+    return this.pendingCarPlatesService.touchCreatedAtByPlate(plate);
+  }
+
   @Delete(':id')
   // @UseGuards(JwtAuthGuard)
   // @ApiBearerAuth('JWT-auth')

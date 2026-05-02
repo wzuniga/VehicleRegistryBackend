@@ -156,4 +156,10 @@ export class PendingCarPlatesService {
 
     return await this.pendingCarPlatesRepository.save(plate);
   }
+
+  async touchCreatedAtByPlate(plateNumber: string): Promise<PendingCarPlate> {
+    const plate = await this.findByPlate(plateNumber);
+    plate.createdAt = new Date();
+    return await this.pendingCarPlatesRepository.save(plate);
+  }
 }
