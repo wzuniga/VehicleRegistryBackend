@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SprlSunarp } from './entities/sprl-sunarp.entity';
+import { SprlSunarpTitles } from './entities/sprl-sunarp-titles.entity';
 import { CreateSprlSunarpDto } from './dto/create-sprl-sunarp.dto';
 import { UpdateSprlSunarpDto } from './dto/update-sprl-sunarp.dto';
 
@@ -10,11 +11,25 @@ export class SprlSunarpService {
   constructor(
     @InjectRepository(SprlSunarp)
     private sprlSunarpRepository: Repository<SprlSunarp>,
+    @InjectRepository(SprlSunarpTitles)
+    private sprlSunarpTitlesRepository: Repository<SprlSunarpTitles>,
   ) {}
 
   async create(dto: CreateSprlSunarpDto): Promise<SprlSunarp> {
     const record = this.sprlSunarpRepository.create(dto);
-    return await this.sprlSunarpRepository.save(record);
+    const saved = await this.sprlSunarpRepository.save(record);
+
+    if (dto.tituloYear && dto.tituloNumber) {
+      await this.sprlSunarpTitlesRepository
+        .createQueryBuilder()
+        .insert()
+        .into(SprlSunarpTitles)
+        .values({ tituloYear: dto.tituloYear, tituloNumber: dto.tituloNumber })
+        .orIgnore()
+        .execute();
+    }
+
+    return saved;
   }
 
   async findAll(): Promise<SprlSunarp[]> {
