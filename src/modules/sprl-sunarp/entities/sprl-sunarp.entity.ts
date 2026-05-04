@@ -40,4 +40,13 @@ export class SprlSunarp {
 
   @Column({ name: 'plate_number', type: 'varchar', length: 20, nullable: true })
   plateNumber: string;
+
+  @Column({ name: 'titulo_year', type: 'varchar', length: 10, nullable: true })
+  tituloYear: string;
+
+  @Column({ name: 'titulo_number', type: 'varchar', length: 20, nullable: true })
+  tituloNumber: string;
+
+  @Column({ name: 'titulo_extracted', type: 'boolean', default: false })
+  tituloExtracted: boolean;
 }

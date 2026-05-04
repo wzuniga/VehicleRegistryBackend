@@ -87,4 +87,24 @@ export class CreateSprlSunarpDto {
   @IsString()
   @MaxLength(20)
   plateNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Year extracted from titulo (e.g. 2026)',
+    example: '2026',
+    maxLength: 10,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  tituloYear?: string;
+
+  @ApiPropertyOptional({
+    description: 'Number extracted from titulo (e.g. 00478350)',
+    example: '00478350',
+    maxLength: 20,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  tituloNumber?: string;
 }
