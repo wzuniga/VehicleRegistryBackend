@@ -46,7 +46,4 @@ export class SprlSunarp {
 
   @Column({ name: 'titulo_number', type: 'varchar', length: 20, nullable: true })
   tituloNumber: string;
-
-  @Column({ name: 'titulo_extracted', type: 'boolean', default: false })
-  tituloExtracted: boolean;
 }

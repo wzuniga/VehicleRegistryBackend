@@ -6,6 +6,8 @@ import { SprlSunarpTitles } from './entities/sprl-sunarp-titles.entity';
 import { CreateSprlSunarpDto } from './dto/create-sprl-sunarp.dto';
 import { UpdateSprlSunarpDto } from './dto/update-sprl-sunarp.dto';
 
+export type SprlSunarpWithExtracted = SprlSunarp & { tituloExtracted?: boolean };
+
 @Injectable()
 export class SprlSunarpService {
   constructor(
@@ -14,6 +16,30 @@ export class SprlSunarpService {
     @InjectRepository(SprlSunarpTitles)
     private sprlSunarpTitlesRepository: Repository<SprlSunarpTitles>,
   ) {}
+
+  private async enrichWithTituloExtracted(
+    records: SprlSunarp[],
+  ): Promise<SprlSunarpWithExtracted[]> {
+    const pairs = records.filter(r => r.tituloYear && r.tituloNumber);
+    if (pairs.length === 0) return records;
+
+    const titles = await this.sprlSunarpTitlesRepository.find({
+      where: pairs.map(r => ({ tituloYear: r.tituloYear, tituloNumber: r.tituloNumber })),
+      select: ['tituloYear', 'tituloNumber', 'tituloExtracted'],
+    });
+
+    const map = new Map(
+      titles.map(t => [`${t.tituloYear}|${t.tituloNumber}`, t.tituloExtracted]),
+    );
+
+    return records.map(r => ({
+      ...r,
+      tituloExtracted:
+        r.tituloYear && r.tituloNumber
+          ? (map.get(`${r.tituloYear}|${r.tituloNumber}`) ?? false)
+          : undefined,
+    }));
+  }
 
   async create(dto: CreateSprlSunarpDto): Promise<SprlSunarp> {
     const record = this.sprlSunarpRepository.create(dto);
@@ -32,47 +58,34 @@ export class SprlSunarpService {
     return saved;
   }
 
-  async findAll(): Promise<SprlSunarp[]> {
-    return await this.sprlSunarpRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(): Promise<SprlSunarpWithExtracted[]> {
+    const records = await this.sprlSunarpRepository.find({ order: { createdAt: 'DESC' } });
+    return this.enrichWithTituloExtracted(records);
   }
 
-  async findOne(id: number): Promise<SprlSunarp> {
-    const record = await this.sprlSunarpRepository.findOne({ 
-      where: { id } 
-    });
-    
-    if (!record) {
-      throw new NotFoundException(`SPRL SUNARP record with ID ${id} not found`);
-    }
-    
-    return record;
+  async findOne(id: number): Promise<SprlSunarpWithExtracted> {
+    const record = await this.sprlSunarpRepository.findOne({ where: { id } });
+    if (!record) throw new NotFoundException(`SPRL SUNARP record with ID ${id} not found`);
+    const [enriched] = await this.enrichWithTituloExtracted([record]);
+    return enriched;
   }
 
-  async findByVersion(version: number): Promise<SprlSunarp[]> {
-    return await this.sprlSunarpRepository.find({
-      where: { version },
-      order: { createdAt: 'DESC' },
-    });
+  async findByVersion(version: number): Promise<SprlSunarpWithExtracted[]> {
+    const records = await this.sprlSunarpRepository.find({ where: { version }, order: { createdAt: 'DESC' } });
+    return this.enrichWithTituloExtracted(records);
   }
 
-  async findByCategory(category: string): Promise<SprlSunarp[]> {
-    return await this.sprlSunarpRepository.find({
-      where: { category },
-      order: { createdAt: 'DESC' },
-    });
+  async findByCategory(category: string): Promise<SprlSunarpWithExtracted[]> {
+    const records = await this.sprlSunarpRepository.find({ where: { category }, order: { createdAt: 'DESC' } });
+    return this.enrichWithTituloExtracted(records);
   }
 
-  async findByCreatedBy(createdBy: number): Promise<SprlSunarp[]> {
-    return await this.sprlSunarpRepository.find({
-      where: { createdBy },
-      order: { createdAt: 'DESC' },
-    });
+  async findByCreatedBy(createdBy: number): Promise<SprlSunarpWithExtracted[]> {
+    const records = await this.sprlSunarpRepository.find({ where: { createdBy }, order: { createdAt: 'DESC' } });
+    return this.enrichWithTituloExtracted(records);
   }
 
-  async findByPlateNumber(plateNumber: string): Promise<SprlSunarp[]> {
-    // First, find the maximum version for this plate
+  async findByPlateNumber(plateNumber: string): Promise<SprlSunarpWithExtracted[]> {
     const maxVersionRecord = await this.sprlSunarpRepository.findOne({
       where: { plateNumber },
       order: { version: 'DESC', createdAt: 'DESC' },
@@ -82,14 +95,11 @@ export class SprlSunarpService {
       throw new NotFoundException(`SPRL SUNARP records with plate number ${plateNumber} not found`);
     }
 
-    // Then, return all records with that maximum version
-    return await this.sprlSunarpRepository.find({
-      where: { 
-        plateNumber,
-        version: maxVersionRecord.version,
-      },
+    const records = await this.sprlSunarpRepository.find({
+      where: { plateNumber, version: maxVersionRecord.version },
       order: { createdAt: 'DESC' },
     });
+    return this.enrichWithTituloExtracted(records);
   }
 
   async getMaxVersionByPlate(plateNumber: string): Promise<number> {
@@ -97,18 +107,21 @@ export class SprlSunarpService {
       where: { plateNumber },
       order: { version: 'DESC', createdAt: 'DESC' },
     });
-    
     return record ? record.version : 0;
   }
 
-  async update(id: number, dto: UpdateSprlSunarpDto): Promise<SprlSunarp> {
-    const record = await this.findOne(id);
+  async update(id: number, dto: UpdateSprlSunarpDto): Promise<SprlSunarpWithExtracted> {
+    const record = await this.sprlSunarpRepository.findOne({ where: { id } });
+    if (!record) throw new NotFoundException(`SPRL SUNARP record with ID ${id} not found`);
     Object.assign(record, dto);
-    return await this.sprlSunarpRepository.save(record);
+    const saved = await this.sprlSunarpRepository.save(record);
+    const [enriched] = await this.enrichWithTituloExtracted([saved]);
+    return enriched;
   }
 
   async remove(id: number): Promise<void> {
-    const record = await this.findOne(id);
+    const record = await this.sprlSunarpRepository.findOne({ where: { id } });
+    if (!record) throw new NotFoundException(`SPRL SUNARP record with ID ${id} not found`);
     await this.sprlSunarpRepository.remove(record);
   }
 }
