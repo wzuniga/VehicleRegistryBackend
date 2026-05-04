@@ -25,6 +25,19 @@ export class SprlSunarpTitlesController {
     return this.service.findPending();
   }
 
+  @Get(':tituloYear/:tituloNumber')
+  @ApiOperation({ summary: 'Get title record (including PDF) by composite key' })
+  @ApiParam({ name: 'tituloYear', type: 'string' })
+  @ApiParam({ name: 'tituloNumber', type: 'string' })
+  @ApiResponse({ status: 200 })
+  @ApiResponse({ status: 404, description: 'Title not found' })
+  findOne(
+    @Param('tituloYear') tituloYear: string,
+    @Param('tituloNumber') tituloNumber: string,
+  ) {
+    return this.service.findOne(tituloYear, tituloNumber);
+  }
+
   @Patch(':tituloYear/:tituloNumber/pdf')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Upload PDF base64 and mark title as extracted' })

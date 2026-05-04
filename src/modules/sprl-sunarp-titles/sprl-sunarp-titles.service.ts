@@ -11,6 +11,12 @@ export class SprlSunarpTitlesService {
     private repo: Repository<SprlSunarpTitles>,
   ) {}
 
+  async findOne(tituloYear: string, tituloNumber: string): Promise<SprlSunarpTitles> {
+    const record = await this.repo.findOne({ where: { tituloYear, tituloNumber } });
+    if (!record) throw new NotFoundException(`Title ${tituloYear}-${tituloNumber} not found`);
+    return record;
+  }
+
   async findPending(): Promise<SprlSunarpTitles[]> {
     const records = await this.repo.find({
       where: { tituloExtracted: false, attempts: LessThan(2) },
