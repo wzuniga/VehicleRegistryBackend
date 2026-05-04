@@ -24,7 +24,7 @@ export class SprlSunarpService {
         .createQueryBuilder()
         .insert()
         .into(SprlSunarpTitles)
-        .values({ tituloYear: dto.tituloYear, tituloNumber: dto.tituloNumber })
+        .values({ tituloYear: dto.tituloYear, tituloNumber: dto.tituloNumber, plate: dto.plateNumber ?? null })
         .orIgnore()
         .execute();
     }

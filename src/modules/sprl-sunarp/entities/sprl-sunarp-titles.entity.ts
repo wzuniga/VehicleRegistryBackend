@@ -11,6 +11,9 @@ export class SprlSunarpTitles {
   @Column({ name: 'titulo_extracted', type: 'boolean', default: false })
   tituloExtracted: boolean;
 
+  @Column({ name: 'plate', type: 'varchar', length: 20, nullable: true })
+  plate: string;
+
   @Column({ name: 'pdf_base64', type: 'text', nullable: true })
   pdfBase64: string;
 
