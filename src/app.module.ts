@@ -10,6 +10,7 @@ import { SprlSunarpTitlesModule } from './modules/sprl-sunarp-titles/sprl-sunarp
 import { SbsInsuranceModule } from './modules/sbs-insurance/sbs-insurance.module';
 import { InspeccionVehicularModule } from './modules/inspeccion-vehicular/inspeccion-vehicular.module';
 import { SoatApesegModule } from './modules/soat-apeseg/soat-apeseg.module';
+import { PlateDetectionsModule } from './modules/plate-detections/plate-detections.module';
 import { typeOrmConfig } from './config/ormconfig';
 
 @Module({
@@ -28,6 +29,7 @@ import { typeOrmConfig } from './config/ormconfig';
     SbsInsuranceModule,
     InspeccionVehicularModule,
     SoatApesegModule,
+    PlateDetectionsModule,
   ],
 })
 export class AppModule { }
