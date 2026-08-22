@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-// import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './auth/auth.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { PendingCarPlatesModule } from './modules/pending-car-plates/pending-car-plates.module';
 import { LicensePlateMasterModule } from './modules/license-plate-master/license-plate-master.module';
@@ -19,7 +19,7 @@ import { typeOrmConfig } from './config/ormconfig';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRoot(typeOrmConfig),
-    // AuthModule,
+    AuthModule,
     VehiclesModule,
     PendingCarPlatesModule,
     LicensePlateMasterModule,

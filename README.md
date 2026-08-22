@@ -237,6 +237,25 @@ npm run migration:revert
 - [Passport JWT](http://www.passportjs.org/) - Autenticación con tokens JWT
 - [class-validator](https://github.com/typestack/class-validator) - Validación de DTOs
 
+## Endpoints sin Autenticación JWT
+
+Los siguientes endpoints permanecen públicos (sin token requerido) para soportar los scrapers y workers externos:
+
+| Módulo | Métodos | Ruta |
+|--------|---------|------|
+| Vehículos | GET / POST / PATCH / DELETE | `/vehicles/**` |
+| Placas pendientes | GET / POST / PATCH / DELETE | `/pending-car-plates/**` |
+| Maestro de placas | GET / POST / PATCH / DELETE | `/license-plate-master/**` |
+| SUNARP SPRL | GET / POST / PATCH / DELETE | `/sprl-sunarp/**` |
+| Títulos SUNARP | GET / PATCH | `/sprl-sunarp-titles/**` |
+| SBS Seguros | GET / POST / PATCH / DELETE | `/sbs-insurance/**` |
+| Inspección vehicular | GET / POST / PATCH / DELETE | `/inspeccion-vehicular/**` |
+| SOAT APESEG | GET / POST / PATCH / DELETE | `/soat-apeseg/**` |
+| Auth pública | POST | `/auth/register`, `/auth/login` |
+| Google OAuth | GET | `/auth/google`, `/auth/google/callback` |
+
+Para activar protección JWT en endpoints de scrapers en el futuro, añade `@UseGuards(JwtAuthGuard)` al controlador correspondiente.
+
 ## Licencia
 
 MIT
