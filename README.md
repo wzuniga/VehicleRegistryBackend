@@ -180,6 +180,14 @@ nginx -t && systemctl restart nginx && systemctl enable nginx
 
 ### 5. Actualizar en producción
 
+**Automático:** cada `push` a `main` dispara `.github/workflows/deploy.yml`, que se conecta por SSH al servidor y hace `git reset --hard origin/main` + `npm install` + `npm run build` + `pm2 restart`. No hace falta entrar al servidor a mano — el flujo normal es simplemente comitear y pushear a `main`.
+
+Requiere estos secrets configurados en GitHub (Settings → Secrets and variables → Actions) para este repo:
+- `DEPLOY_HOST` = `137.184.208.111`
+- `DEPLOY_USER` = `root`
+- `DEPLOY_SSH_KEY` = llave privada dedicada para CI (no la misma que usas para entrar manualmente)
+
+**Manual (si hace falta hacerlo a mano):**
 ```bash
 cd /opt/VehicleRegistryBackend
 ./deployBackend.sh   # git pull + npm install + npm run build + pm2 restart
