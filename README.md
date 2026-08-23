@@ -82,104 +82,131 @@ npm run build
 npm run start:prod
 ```
 
-## Despliegue a Producción (clásico y eficiente)
+## Despliegue a Producción
 
-La opción más usada y estable para un VPS es:
+**Arquitectura actual (en vivo):** un único VPS sirve el backend y el frontend juntos detrás de Nginx. El frontend (build estático de Vite) se sirve directamente desde `/`, y el backend (este repo, corriendo con PM2 en `127.0.0.1:3000`, **no expuesto directamente a internet**) se expone únicamente bajo la ruta interna `/api/*`. Así todo vive en un solo origen (sin problemas de CORS) y el puerto del proceso Node nunca queda accesible desde afuera.
 
-- NestJS compilado (`dist/`)
-- PM2 como process manager
-- Nginx como reverse proxy (opcional pero recomendado)
+```
+Internet ──80──▶ Nginx (137.184.208.111)
+                    ├── /            → archivos estáticos de VehicleRegistryFrontend/dist
+                    └── /api/*       → proxy_pass a 127.0.0.1:3000 (VehicleRegistryBackend, PM2)
 
-Este proyecto ya incluye configuración lista para ese enfoque en `ecosystem.config.js` y un script de despliegue en `deployBackend.sh`.
-
-### 1. Preparar servidor
-
-Recomendado: Ubuntu 22.04+, Node.js 20 LTS y PM2.
-
-```bash
-sudo apt update
-sudo apt install -y git nginx
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo npm install -g pm2
+VehicleRegistryBackend (PM2, puerto 3000, solo 127.0.0.1)
+                    └── Postgres en 178.128.159.83 (DB: postgres, schemas public/auth)
 ```
 
-### 2. Configurar proyecto en servidor
+- **Servidor de app:** `137.184.208.111` (root, acceso por llave SSH; Ubuntu 24.04, droplet pequeño — 512MB RAM, por eso tiene 2GB de swap habilitado, necesario para que `npm install`/`npm run build` no mueran por falta de memoria).
+- **Base de datos:** Postgres 16 en `178.128.159.83`, base **`postgres`** (la base default del servidor — no una base separada llamada `vehicle_registry`; ese nombre solo se usa como ejemplo genérico en la sección de instalación local más arriba). Esta base ya contiene los datos reales de la app en los schemas `public` (vehículos, SUNARP, SOAT, etc.) y `auth` (usuarios). El servidor Postgres es compartido con otras apps (cada una en su propio schema) — nunca ejecutes nada que toque schemas fuera de `public`/`auth`. Las credenciales viven solo en el `.env` del servidor (no están en este repo).
+- **Sin dominio todavía:** se sirve por HTTP sobre la IP. Cuando haya un dominio apuntando aquí, correr Certbot (ver más abajo) y actualizar `FRONTEND_URL` / `GOOGLE_CALLBACK_URL` / la config de Nginx.
+- **Google OAuth y SMTP (envío de correos de invitación) no están configurados con credenciales reales** — el registro/login por email y el resto de la app funcionan igual, pero "Continuar con Google" y el pre-registro por correo (`/admin/preregister`) no funcionarán hasta cargar un `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` real (Google Cloud Console) y credenciales SMTP reales en el `.env` del servidor.
+
+### 1. Preparar el servidor (una sola vez)
 
 ```bash
-git clone <tu-repo>
+apt update && apt install -y git nginx
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt install -y nodejs
+npm install -g pm2
+
+# Swap (imprescindible en droplets con poca RAM)
+fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+```
+
+### 2. Clonar y configurar
+
+```bash
+cd /opt
+git clone https://github.com/wzuniga/VehicleRegistryBackend.git
 cd VehicleRegistryBackend
 cp .env.production .env
+nano .env   # completar con las credenciales reales (DB, JWT_SECRET, Google, SMTP)
 ```
 
-Edita `.env` con credenciales reales y seguras. Nunca subas secretos al repositorio.
+`JWT_SECRET` debe ser un valor generado aparte (por ejemplo `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`), nunca el placeholder del archivo de ejemplo. Nunca subas el `.env` real al repositorio (ya está en `.gitignore`).
 
-### 3. Primer deploy
-
-```bash
-chmod +x deployBackend.sh
-./deployBackend.sh
-```
-
-El script hace:
-
-- `git pull`
-- instalación de dependencias con `npm install`
-- compilación `npm run build`
-- si la API no existe en PM2: `pm2 start ecosystem.config.js --only vehicle-registry-api --env production`
-- si ya existe: `pm2 restart vehicle-registry-api --update-env`
-
-### 4. Autoarranque tras reinicio del servidor
+### 3. Compilar y arrancar con PM2
 
 ```bash
-pm2 startup
+npm install
+npm run build
+pm2 start ecosystem.config.js
 pm2 save
+pm2 startup systemd -u root --hp /root   # ejecutar el comando que imprima, para autoarranque tras reboot
 ```
 
-Ejecuta el comando que te devuelva `pm2 startup`.
+`ecosystem.config.js` corre **1 sola instancia** en modo `fork` (pensado para un droplet pequeño). Si el servidor crece, se puede subir `instances` y pasar a `cluster`.
 
-### 5. Nginx (recomendado)
+### 4. Nginx (frontend + `/api` en un solo server block)
 
-Configura un proxy hacia la API en puerto interno 3000.
+El backend **no debe** exponerse directamente al puerto 3000 desde internet: solo debe ser alcanzable vía Nginx bajo `/api`. Un firewall (`ufw allow 22,80` y nada más) refuerza esto aunque Node escuche en todas las interfaces.
 
 ```nginx
 server {
-	listen 80;
-	server_name api.tu-dominio.com;
+    listen 80;
+    server_name 137.184.208.111;   # o tu dominio cuando lo tengas
 
-	location / {
-		proxy_pass http://127.0.0.1:3000;
-		proxy_http_version 1.1;
-		proxy_set_header Host $host;
-		proxy_set_header X-Real-IP $remote_addr;
-		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_set_header X-Forwarded-Proto $scheme;
-	}
+    client_max_body_size 50m;      # imágenes en base64 (plate-detections, etc.)
+
+    root /opt/VehicleRegistryFrontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;   # SPA routing (React Router)
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000/;  # nota el / final: hace que Nginx quite el prefijo /api
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/docs {
+        proxy_pass http://127.0.0.1:3000/docs;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
 }
 ```
+
+```bash
+ln -s /etc/nginx/sites-available/vehicle-registry /etc/nginx/sites-enabled/vehicle-registry
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl restart nginx && systemctl enable nginx
+```
+
+### 5. Actualizar en producción
+
+```bash
+cd /opt/VehicleRegistryBackend
+./deployBackend.sh   # git pull + npm install + npm run build + pm2 restart
+```
+
+Para el frontend, ver el README de `VehicleRegistryFrontend` (solo hace falta reconstruir el `dist/`; Nginx lo sirve directo, sin PM2).
 
 ### 6. Operación diaria
 
 ```bash
-# Actualizar backend
-./deployBackend.sh
-
-# Logs
-pm2 logs vehicle-registry-api
-
-# Estado y consumo
 pm2 status
+pm2 logs vehicle-registry-api
 pm2 monit
+
+# Logs de Nginx
+tail -f /var/log/nginx/access.log
+tail -f /var/log/nginx/error.log
 ```
 
-### Perfil recomendado para bajo consumo
+### 7. HTTPS (cuando haya un dominio)
 
-- PM2 en `fork` con 1 instancia por defecto
-- reinicio automático por memoria (`max_memory_restart`)
-- `watch: false` en producción
-- app detrás de Nginx
+```bash
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d tu-dominio.com
+```
 
-Si luego necesitas más throughput, puedes pasar a `cluster` con más instancias.
+Después, actualizar en el `.env` del backend: `FRONTEND_URL` y `GOOGLE_CALLBACK_URL` a `https://tu-dominio.com`. El frontend no necesita cambios (sigue llamando a `/api`, mismo origen).
 
 ## Endpoints Principales
 
@@ -251,6 +278,7 @@ Los siguientes endpoints permanecen públicos (sin token requerido) para soporta
 | SBS Seguros | GET / POST / PATCH / DELETE | `/sbs-insurance/**` |
 | Inspección vehicular | GET / POST / PATCH / DELETE | `/inspeccion-vehicular/**` |
 | SOAT APESEG | GET / POST / PATCH / DELETE | `/soat-apeseg/**` |
+| Detección de placas | GET / POST / PATCH | `/plate-detections/**` |
 | Auth pública | POST | `/auth/register`, `/auth/login` |
 | Google OAuth | GET | `/auth/google`, `/auth/google/callback` |
 

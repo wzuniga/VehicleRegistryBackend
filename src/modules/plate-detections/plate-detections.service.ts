@@ -4,6 +4,15 @@ import { Repository } from 'typeorm';
 import { PlateDetection } from './entities/plate-detection.entity';
 import { CreatePlateDetectionDto } from './dto/create-plate-detection.dto';
 import { UpdateReviewedDto } from './dto/update-reviewed.dto';
+import { UpdatePlateDetectionDto } from './dto/update-plate-detection.dto';
+
+export interface PaginatedPlateDetections {
+  data: PlateDetection[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class PlateDetectionsService {
@@ -17,11 +26,14 @@ export class PlateDetectionsService {
     return await this.repo.save(detection);
   }
 
-  async findAll(reviewed?: boolean): Promise<PlateDetection[]> {
-    return await this.repo.find({
+  async findAll(page = 1, limit = 10, reviewed?: boolean): Promise<PaginatedPlateDetections> {
+    const [data, total] = await this.repo.findAndCount({
       where: reviewed === undefined ? {} : { reviewed },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
   }
 
   async findOne(id: number): Promise<PlateDetection> {
@@ -35,6 +47,12 @@ export class PlateDetectionsService {
     const reviewed = dto.reviewed ?? true;
     detection.reviewed = reviewed;
     detection.reviewedAt = reviewed ? new Date() : null;
+    return await this.repo.save(detection);
+  }
+
+  async updatePlate(id: number, dto: UpdatePlateDetectionDto): Promise<PlateDetection> {
+    const detection = await this.findOne(id);
+    detection.possiblePlate = dto.possiblePlate;
     return await this.repo.save(detection);
   }
 }

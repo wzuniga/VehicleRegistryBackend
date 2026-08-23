@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'vehicle-registry-api',
       script: 'dist/main.js',
-      instances: 3,
+      instances: 1,
       exec_mode: 'fork',
       autorestart: true,
       watch: false,

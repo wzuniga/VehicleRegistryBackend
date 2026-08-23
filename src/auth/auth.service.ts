@@ -98,13 +98,13 @@ export class AuthService {
     return this.usersRepository.findOne({ where: { id: newUser.id } });
   }
 
-  async getProfile(userId: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+  async getProfile(userId: number | string) {
+    const user = await this.usersRepository.findOne({ where: { id: Number(userId) } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return this.sanitize(user);
   }
 
-  async getCreditHistory(userId: string) {
+  async getCreditHistory(userId: number | string) {
     return this.creditTxRepository.find({ where: { userId: String(userId) }, order: { createdAt: 'DESC' } });
   }
 

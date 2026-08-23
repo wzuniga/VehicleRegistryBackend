@@ -1,72 +1,52 @@
 # 🚀 Guía de Despliegue a Producción
 
-## Opción 1: Despliegue en Servidor (VPS/Droplet)
+## Opción 1: Despliegue en Servidor (VPS/Droplet) — la que está en uso
+
+**Estado actual:** desplegado en `137.184.208.111`, un solo VPS que sirve el backend (este repo) y el frontend (`VehicleRegistryFrontend`) juntos vía Nginx. El backend corre con PM2 escuchando solo en `127.0.0.1:3000` (nunca expuesto directo a internet); Nginx lo publica bajo `/api/*` y sirve el build estático del frontend en `/`. Ver la sección "Despliegue a Producción" del `README.md` de este repo para el detalle completo (diagrama, config de Nginx, pasos de actualización).
+
+Resumen rápido de lo que hay que tener en el servidor:
 
 ### Prerrequisitos en el Servidor
-- Ubuntu 20.04+ / Debian 11+
-- Node.js 18+ instalado
+- Ubuntu 22.04+ / 24.04
+- Node.js 22 LTS
 - PM2 para gestión de procesos
-- Nginx (opcional, para proxy reverso)
+- Nginx (sirve el frontend y hace de proxy hacia `/api`)
+- Swap habilitado si el droplet tiene poca RAM (< 1GB) — sin esto, `npm install`/`npm run build` se matan por OOM
 
 ### Paso 1: Preparar el Servidor
 
 ```bash
-# Conectarse al servidor
 ssh root@tu-servidor-ip
 
-# Actualizar el sistema
-sudo apt update && sudo apt upgrade -y
+apt update && apt upgrade -y
+apt install -y git nginx
 
-# Instalar Node.js 18+
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt install -y nodejs
+npm install -g pm2
 
-# Instalar PM2 globalmente
-sudo npm install -g pm2
-
-# Instalar Git
-sudo apt install -y git
-
-# Crear usuario para la aplicación (opcional pero recomendado)
-sudo adduser vehicleapp
-sudo usermod -aG sudo vehicleapp
+# Swap (solo si el droplet tiene poca RAM)
+fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
 ```
 
 ### Paso 2: Clonar el Repositorio
 
 ```bash
-# Cambiar al usuario de la app
-su - vehicleapp
-
-# Clonar el repo
-cd ~
+cd /opt
 git clone https://github.com/wzuniga/VehicleRegistryBackend.git
 cd VehicleRegistryBackend
-
-# Instalar dependencias
 npm install
 ```
 
 ### Paso 3: Configurar Variables de Entorno
 
 ```bash
-# Copiar el archivo de producción
 cp .env.production .env
-
-# Editar con tus datos reales
 nano .env
 ```
 
-Asegúrate de que `.env` tenga:
-```
-DB_HOST=143.110.206.161
-DB_PORT=5432
-DB_USERNAME=root
-DB_PASSWORD=231112RMcc
-DB_DATABASE=vehicle_registry
-PORT=3000
-NODE_ENV=production
-```
+Completa `.env` con las credenciales reales (base de datos, `JWT_SECRET` generado aparte, Google OAuth, SMTP). La plantilla en `.env.production` no lleva secretos reales — nunca los subas al repo. Ver el `README.md` para el detalle de cada variable y el diagrama de arquitectura actual.
 
 ### Paso 4: Compilar y Ejecutar
 
@@ -87,6 +67,8 @@ pm2 logs vehicle-registry-api
 pm2 status
 ```
 
+`ecosystem.config.js` está configurado con `instances: 1` (pensado para droplets pequeños). Súbelo si el servidor tiene más recursos.
+
 ### Paso 5: Configurar PM2 para Auto-inicio
 
 ```bash
@@ -94,65 +76,32 @@ pm2 status
 pm2 save
 
 # Configurar PM2 para iniciarse con el sistema
-pm2 startup
+pm2 startup systemd -u root --hp /root
 
 # Ejecutar el comando que PM2 te muestre
 ```
 
-### Paso 6: Configurar Nginx como Proxy Reverso (Opcional)
+### Paso 6: Configurar Nginx (frontend + proxy `/api`)
+
+El backend nunca debe quedar expuesto directo al puerto 3000: solo alcanzable vía Nginx bajo `/api`. Ver la configuración completa (con el `location /` para el frontend y el `location /api/` para el backend) en el `README.md` de este repo y en el de `VehicleRegistryFrontend`.
 
 ```bash
-# Instalar Nginx
-sudo apt install -y nginx
-
-# Crear configuración
 sudo nano /etc/nginx/sites-available/vehicle-registry
-```
-
-Contenido del archivo:
-```nginx
-server {
-    listen 80;
-    server_name tu-dominio.com;  # o tu IP
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-```bash
-# Activar el sitio
 sudo ln -s /etc/nginx/sites-available/vehicle-registry /etc/nginx/sites-enabled/
-
-# Probar configuración
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
-
-# Reiniciar Nginx
 sudo systemctl restart nginx
+sudo systemctl enable nginx
 ```
 
 ### Paso 7: Configurar Firewall
 
 ```bash
-# Permitir SSH
-sudo ufw allow ssh
-
-# Permitir HTTP y HTTPS
+# Permitir solo SSH y HTTP/HTTPS — el puerto 3000 del backend NO se abre,
+# solo es alcanzable internamente por Nginx (127.0.0.1)
+sudo ufw allow OpenSSH
 sudo ufw allow 80
 sudo ufw allow 443
-
-# Permitir el puerto de la app (si no usas Nginx)
-sudo ufw allow 3000
-
-# Activar firewall
 sudo ufw enable
 ```
 
@@ -191,13 +140,13 @@ Crear archivo `railway.json`:
 
 ### Paso 3: Configurar Variables de Entorno en Railway
 
-En el dashboard de Railway, ve a tu proyecto y agrega:
+En el dashboard de Railway, ve a tu proyecto y agrega las mismas variables que en `.env.production` (host y credenciales reales de tu base de datos, `JWT_SECRET`, etc.):
 ```
-DB_HOST=143.110.206.161
+DB_HOST=<host-de-tu-postgres>
 DB_PORT=5432
-DB_USERNAME=root
-DB_PASSWORD=231112RMcc
-DB_DATABASE=vehicle_registry
+DB_USERNAME=<usuario>
+DB_PASSWORD=<password>
+DB_DATABASE=<nombre-de-tu-base>
 NODE_ENV=production
 PORT=3000
 ```
@@ -263,11 +212,11 @@ pm2 delete vehicle-registry-api
 ## Verificar que Funciona
 
 ```bash
-# Desde tu máquina local
-curl http://tu-servidor-ip:3000/pending-car-plates
+# Desde tu máquina local (el backend solo es alcanzable vía Nginx, bajo /api)
+curl http://tu-servidor-ip/api/pending-car-plates
 
 # O visita en el navegador
-http://tu-servidor-ip:3000/docs
+http://tu-servidor-ip/api/docs
 ```
 
 ---
@@ -308,4 +257,4 @@ pm2 monit
 - **Opción 2 (Railway)**: Más rápido, gratis para empezar, ideal para prototipos
 - **Opción 3 (Render)**: Similar a Railway, también gratis para empezar
 
-**Recomendación**: Si ya tienes el servidor `143.110.206.161`, usa la **Opción 1** con PM2.
+**Recomendación**: Este proyecto ya está desplegado con la **Opción 1** (PM2 + Nginx) en `137.184.208.111` — ver el detalle en el `README.md`.
