@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlateDetection } from './entities/plate-detection.entity';
@@ -14,6 +14,8 @@ export interface PaginatedPlateDetections {
   totalPages: number;
 }
 
+const POSTGRES_UNIQUE_VIOLATION = '23505';
+
 @Injectable()
 export class PlateDetectionsService {
   constructor(
@@ -21,9 +23,25 @@ export class PlateDetectionsService {
     private repo: Repository<PlateDetection>,
   ) {}
 
+  private normalizePlate(plate?: string): string | null {
+    if (!plate) return null;
+    const normalized = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return normalized || null;
+  }
+
   async create(dto: CreatePlateDetectionDto): Promise<PlateDetection> {
-    const detection = this.repo.create(dto);
-    return await this.repo.save(detection);
+    const detection = this.repo.create({
+      ...dto,
+      possiblePlate: this.normalizePlate(dto.possiblePlate),
+    });
+    try {
+      return await this.repo.save(detection);
+    } catch (err) {
+      if (err.code === POSTGRES_UNIQUE_VIOLATION) {
+        throw new ConflictException('Esta placa ya fue insertada anteriormente');
+      }
+      throw err;
+    }
   }
 
   async findAll(page = 1, limit = 10, reviewed?: boolean): Promise<PaginatedPlateDetections> {
@@ -52,7 +70,14 @@ export class PlateDetectionsService {
 
   async updatePlate(id: number, dto: UpdatePlateDetectionDto): Promise<PlateDetection> {
     const detection = await this.findOne(id);
-    detection.possiblePlate = dto.possiblePlate;
-    return await this.repo.save(detection);
+    detection.possiblePlate = this.normalizePlate(dto.possiblePlate);
+    try {
+      return await this.repo.save(detection);
+    } catch (err) {
+      if (err.code === POSTGRES_UNIQUE_VIOLATION) {
+        throw new ConflictException('Esta placa ya fue insertada anteriormente');
+      }
+      throw err;
+    }
   }
 }

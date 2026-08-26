@@ -16,6 +16,7 @@ export class PlateDetectionsController {
   @Post()
   @ApiOperation({ summary: 'Save a new plate detection (image + possible plate)' })
   @ApiResponse({ status: 201, description: 'Detection saved successfully' })
+  @ApiResponse({ status: 409, description: 'This plate was already inserted before' })
   create(@Body() dto: CreatePlateDetectionDto) {
     return this.service.create(dto);
   }
@@ -72,6 +73,7 @@ export class PlateDetectionsController {
   @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 200, description: 'Plate corrected' })
   @ApiResponse({ status: 404, description: 'Detection not found' })
+  @ApiResponse({ status: 409, description: 'This plate was already inserted before' })
   updatePlate(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePlateDetectionDto) {
     return this.service.updatePlate(id, dto);
   }

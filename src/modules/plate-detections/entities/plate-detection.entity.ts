@@ -8,7 +8,7 @@ export class PlateDetection {
   @Column({ name: 'image_base64', type: 'text' })
   imageBase64: string;
 
-  @Column({ name: 'possible_plate', type: 'varchar', length: 20, nullable: true })
+  @Column({ name: 'possible_plate', type: 'varchar', length: 20, nullable: true, unique: true })
   possiblePlate: string;
 
   @Column({ type: 'boolean', default: false })
