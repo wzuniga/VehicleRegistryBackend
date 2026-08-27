@@ -65,6 +65,9 @@ export class PlateDetectionsService {
     const reviewed = dto.reviewed ?? true;
     detection.reviewed = reviewed;
     detection.reviewedAt = reviewed ? new Date() : null;
+    if (dto.hasPlate !== undefined) detection.hasPlate = dto.hasPlate;
+    if (dto.confidence !== undefined) detection.confidence = dto.confidence;
+    if (dto.detectedPlate !== undefined) detection.detectedPlate = this.normalizePlate(dto.detectedPlate);
     return await this.repo.save(detection);
   }
 

@@ -17,6 +17,15 @@ export class PlateDetection {
   @Column({ name: 'reviewed_at', type: 'timestamptz', nullable: true })
   reviewedAt: Date;
 
+  @Column({ name: 'has_plate', type: 'boolean', nullable: true, default: true })
+  hasPlate: boolean;
+
+  @Column({ type: 'real', nullable: true })
+  confidence: number;
+
+  @Column({ name: 'detected_plate', type: 'varchar', length: 20, nullable: true })
+  detectedPlate: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 
