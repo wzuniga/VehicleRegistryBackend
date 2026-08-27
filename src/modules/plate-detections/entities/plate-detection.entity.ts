@@ -17,7 +17,7 @@ export class PlateDetection {
   @Column({ name: 'reviewed_at', type: 'timestamptz', nullable: true })
   reviewedAt: Date;
 
-  @Column({ name: 'has_plate', type: 'boolean', nullable: true, default: true })
+  @Column({ name: 'has_plate', type: 'boolean', nullable: true })
   hasPlate: boolean;
 
   @Column({ type: 'real', nullable: true })
