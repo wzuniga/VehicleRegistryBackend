@@ -31,9 +31,8 @@ export class PendingCarPlatesController {
   @Post()
   // @UseGuards(JwtAuthGuard)
   // @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a new pending car plate' })
-  @ApiResponse({ status: 201, description: 'Plate created successfully' })
-  @ApiResponse({ status: 409, description: 'Plate already exists' })
+  @ApiOperation({ summary: 'Create a new pending car plate. If the plate already exists, it is returned unchanged (no error, no duplicate)' })
+  @ApiResponse({ status: 201, description: 'Plate created, or already existed and was returned as-is' })
   // @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Body() createPendingCarPlateDto: CreatePendingCarPlateDto) {
     return this.pendingCarPlatesService.create(createPendingCarPlateDto);

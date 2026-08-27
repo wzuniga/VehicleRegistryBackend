@@ -15,16 +15,23 @@ export class PendingCarPlatesService {
   ) { }
 
   async create(dto: CreatePendingCarPlateDto): Promise<PendingCarPlate> {
+    // Si ya existe, no se modifica nada: se devuelve el registro tal cual está.
     const existing = await this.pendingCarPlatesRepository.findOne({
       where: { plate: dto.plate }
     });
-
-    if (existing) {
-      throw new ConflictException(`Plate ${dto.plate} already exists`);
-    }
+    if (existing) return existing;
 
     const plate = this.pendingCarPlatesRepository.create(dto);
-    return await this.pendingCarPlatesRepository.save(plate);
+    try {
+      return await this.pendingCarPlatesRepository.save(plate);
+    } catch (err) {
+      // Carrera entre requests concurrentes: el UNIQUE constraint de la BD
+      // es la garantía real, esto solo evita que se vea como un error.
+      if (err.code === '23505') {
+        return await this.pendingCarPlatesRepository.findOne({ where: { plate: dto.plate } });
+      }
+      throw err;
+    }
   }
 
   async findAll(): Promise<PendingCarPlate[]> {
