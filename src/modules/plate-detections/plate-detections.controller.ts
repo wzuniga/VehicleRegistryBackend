@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PlateDetectionsService } from './plate-detections.service';
 import { CreatePlateDetectionDto } from './dto/create-plate-detection.dto';
@@ -76,5 +76,18 @@ export class PlateDetectionsController {
   @ApiResponse({ status: 409, description: 'This plate was already inserted before' })
   updatePlate(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePlateDetectionDto) {
     return this.service.updatePlate(id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a plate detection (admin only)' })
+  @ApiParam({ name: 'id', type: 'number' })
+  @ApiResponse({ status: 204, description: 'Detection deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Detection not found' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
   }
 }

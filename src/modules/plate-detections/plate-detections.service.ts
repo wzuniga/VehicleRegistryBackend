@@ -83,4 +83,9 @@ export class PlateDetectionsService {
       throw err;
     }
   }
+
+  async remove(id: number): Promise<void> {
+    const detection = await this.findOne(id);
+    await this.repo.remove(detection);
+  }
 }
