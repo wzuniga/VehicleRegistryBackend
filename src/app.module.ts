@@ -11,6 +11,8 @@ import { SbsInsuranceModule } from './modules/sbs-insurance/sbs-insurance.module
 import { InspeccionVehicularModule } from './modules/inspeccion-vehicular/inspeccion-vehicular.module';
 import { SoatApesegModule } from './modules/soat-apeseg/soat-apeseg.module';
 import { PlateDetectionsModule } from './modules/plate-detections/plate-detections.module';
+import { SatDeudaModule } from './modules/sat-deuda/sat-deuda.module';
+import { SatArequipaModule } from './modules/sat-arequipa/sat-arequipa.module';
 import { typeOrmConfig } from './config/ormconfig';
 
 @Module({
@@ -30,6 +32,8 @@ import { typeOrmConfig } from './config/ormconfig';
     InspeccionVehicularModule,
     SoatApesegModule,
     PlateDetectionsModule,
+    SatDeudaModule,
+    SatArequipaModule,
   ],
 })
 export class AppModule { }
